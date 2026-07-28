@@ -1,0 +1,15 @@
+# Java / Maven
+backend/btcgram/target/
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Frontend (future-proofing)
+node_modules/
+dist/
+build/
+.env

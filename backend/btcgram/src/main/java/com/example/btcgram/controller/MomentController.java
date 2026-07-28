@@ -16,6 +16,11 @@ public class MomentController {
         this.geocodingService = geocodingService;
     }
 
+    @GetMapping(value = "/api/debug/raw", produces = org.springframework.http.MediaType.APPLICATION_JSON_VALUE)
+    public Mono<String> getRaw(@RequestParam double lat, @RequestParam double lon) {
+        return geocodingService.debugRawResponse(lat, lon);
+    }
+
     @GetMapping("/api/moment")
     public Mono<Moment> getMoment(@RequestParam double lat, @RequestParam double lon) {
         return geocodingService.reverseGeocode(lat, lon)

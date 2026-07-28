@@ -3,6 +3,8 @@ package com.example.btcgram.service;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 @Service
 public class GeocodingService {
@@ -31,6 +33,23 @@ public class GeocodingService {
                         response.address().bestCityGuess(),
                         response.address().country(),
                         response.address().countryCode()));
+    }
+
+    public Mono<String> debugRawResponse(double lat, double lon) {
+        return webClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/reverse")
+                        .queryParam("lat", lat)
+                        .queryParam("lon", lon)
+                        .queryParam("format", "json")
+                        .queryParam("accept-language", "en")
+                        .build())
+                .retrieve()
+                .bodyToMono(JsonNode.class)
+                .map(node -> JsonMapper.builder()
+                        .build()
+                        .writerWithDefaultPrettyPrinter()
+                        .writeValueAsString(node));
     }
 
     // Small internal records just to parse Nominatim's JSON shape

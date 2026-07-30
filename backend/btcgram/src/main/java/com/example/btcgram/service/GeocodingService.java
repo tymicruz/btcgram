@@ -29,10 +29,16 @@ public class GeocodingService {
                         .build())
                 .retrieve()
                 .bodyToMono(NominatimResponse.class)
-                .map(response -> new GeocodingResult(
-                        response.address().bestCityGuess(),
-                        response.address().country(),
-                        response.address().countryCode()));
+                .map(response -> {
+                    if (response.address() == null) {
+                        return new GeocodingResult("Unknown", "Unknown", null);
+                    }
+                    return new GeocodingResult(
+                            response.address().bestCityGuess(),
+                            response.address().country(),
+                            response.address().countryCode());
+                })
+                .onErrorReturn(new GeocodingResult("Unavailable", "Unavailable", null));
     }
 
     public Mono<String> debugRawResponse(double lat, double lon) {

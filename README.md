@@ -18,11 +18,22 @@ This is the **backend** for a larger project: the plan is to pair this API with 
 - Weather/timezone/time are still fetched even when location is unknown — should be skipped in that case
 - BTC price falls back to `0.0` if CoinGecko fails after the cache expires — may change to `null` later to distinguish "no data" from "price is actually zero"
 
-### Frontend (not started)
-- ⬜ Take/upload a photo
-- ⬜ Call this API with the photo's location (or user's current location)
-- ⬜ Overlay location, weather, time, and BTC price onto the image
-- ⬜ Save/share the result
+### Frontend (`frontend/`, Expo / React Native — in progress)
+
+Camera-only capture (no upload, no camera-roll picker), overlays this API's data onto the photo, then saves the result straight to the phone's camera roll. Built one milestone at a time, each checked off once it's running on a physical device:
+
+- ⬜ 1. Scaffold a blank Expo (TypeScript) app, running on a physical device via Expo Go
+- ⬜ 2. "Hello, btcgram!" placeholder screen (confirms the dev loop works)
+- ⬜ 3. Live camera preview
+- ⬜ 4. Capture a photo and display it
+- ⬜ 5. Two-screen navigation (Camera → Overlay)
+- ⬜ 6. Fetch device location
+- ⬜ 7. Call `/api/moment` with that location and display the raw response
+- ⬜ 8. Styled overlay (city, weather, local time, BTC price laid over the photo)
+- ⬜ 9. Save the composed image to the camera roll
+- ⬜ 10. Error/loading states polish pass (permissions, network failures, sentinel values)
+
+Local dev: run the backend via Docker (see above), point the Expo app at your machine's LAN IP so a physical phone can reach it over Wi-Fi. See `CLAUDE.md` for the full architecture/decisions behind this.
 
 ## Tech stack
 

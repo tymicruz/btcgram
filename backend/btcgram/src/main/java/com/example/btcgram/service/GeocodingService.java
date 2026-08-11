@@ -1,13 +1,18 @@
 package com.example.btcgram.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+
 import reactor.core.publisher.Mono;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 @Service
 public class GeocodingService {
+
+    private static final Logger log = LoggerFactory.getLogger(GeocodingService.class);
 
     private final WebClient webClient;
 
@@ -38,7 +43,8 @@ public class GeocodingService {
                             response.address().country(),
                             response.address().countryCode());
                 })
-                .onErrorReturn(new GeocodingResult("Unavailable", "Unavailable", null));
+                .onErrorReturn(new GeocodingResult("Unavailable", "Unavailable", null))
+                .doOnError(error -> log.warn("Geocoding failed for lat={}, lon={}: {}", lat, lon, error.getMessage()));
     }
 
     public Mono<String> debugRawResponse(double lat, double lon) {

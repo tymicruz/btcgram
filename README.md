@@ -59,6 +59,21 @@ This is the **backend** for a larger project: the plan is to pair this API with 
 
 4. The API is now available at `http://localhost:8080`
 
+### Running with Docker locally
+
+A `Dockerfile` is included (`backend/btcgram/Dockerfile`) if you'd rather not install Java/Maven locally, or want to run the backend for a device on your local network (e.g. testing a mobile app over Wi-Fi).
+
+```bash
+cd backend/btcgram
+docker build -t btcgram .
+docker run -p 8080:8080 btcgram
+```
+
+- `docker build -t btcgram .` runs a two-stage build (Maven build → copies the jar into a slim `eclipse-temurin:25-jre-alpine` image) and tags it `btcgram`.
+- `docker run -p 8080:8080 btcgram` starts the container, mapping container port 8080 to your machine's port 8080.
+- The API is then available at `http://localhost:8080`, and at `http://<your-machine's-LAN-IP>:8080` from other devices on the same network (e.g. a phone testing a client app against this backend).
+- Add `-d` to `docker run` to run it detached; stop it with `docker ps` + `docker stop <container-id>` (or `Ctrl+C` if running in the foreground).
+
 ## Testing the API
 
 ### Endpoint

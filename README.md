@@ -23,7 +23,7 @@ This is the **backend** for a larger project: the plan is to pair this API with 
 Camera-only capture (no upload, no camera-roll picker), overlays this API's data onto the photo, then saves the result straight to the phone's camera roll. Built one milestone at a time, each checked off once it's running on a physical device:
 
 - ✅ 1. Scaffold a blank Expo (TypeScript) app, running on a physical device via Expo Go
-- ⬜ 2. "Hello, btcgram!" placeholder screen (confirms the dev loop works)
+- ✅ 2. "Hello, btcgram!" placeholder screen (confirms the dev loop works)
 - ⬜ 3. Live camera preview
 - ⬜ 4. Capture a photo and display it
 - ⬜ 5. Two-screen navigation (Camera → Overlay)

@@ -3,6 +3,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Button, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import CloseButton from '../components/CloseButton';
 import { RootStackParamList } from '../navigation/RootNavigator';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Camera'>;
@@ -82,6 +83,7 @@ export default function CameraScreen({ navigation }: Props) {
           />
         </Pressable>
       </View>
+      <CloseButton onPress={() => navigation.goBack()} />
     </View>
   );
 }

@@ -28,6 +28,12 @@
         {
           "locationWhenInUsePermission": "btcgram uses your location to look up the weather and time where you took your photo."
         }
+      ],
+      [
+        "expo-media-library",
+        {
+          "savePhotosPermission": "btcgram saves your Moment photos to your camera roll when you tap Save."
+        }
       ]
     ]
   }

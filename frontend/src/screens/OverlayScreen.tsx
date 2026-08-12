@@ -1,9 +1,12 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as Location from 'expo-location';
+import * as MediaLibrary from 'expo-media-library';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { captureRef } from 'react-native-view-shot';
 
 import { fetchMoment } from '../api/moment';
+import CloseButton from '../components/CloseButton';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { Moment } from '../types/moment';
 
@@ -15,12 +18,17 @@ export default function OverlayScreen({ route, navigation }: Props) {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [moment, setMoment] = useState<Moment | null>(null);
   const [momentError, setMomentError] = useState<string | null>(null);
-  const [retakePressed, setRetakePressed] = useState(false);
-  const retakeScale = useRef(new Animated.Value(1)).current;
 
-  const handleRetakePressIn = () => {
-    setRetakePressed(true);
-    Animated.spring(retakeScale, {
+  const captureAreaRef = useRef<View>(null);
+
+  const [savePressed, setSavePressed] = useState(false);
+  const saveScale = useRef(new Animated.Value(1)).current;
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+
+  const handleSavePressIn = () => {
+    setSavePressed(true);
+    Animated.spring(saveScale, {
       toValue: 0.92,
       useNativeDriver: true,
       speed: 50,
@@ -28,9 +36,9 @@ export default function OverlayScreen({ route, navigation }: Props) {
     }).start();
   };
 
-  const handleRetakePressOut = () => {
-    setRetakePressed(false);
-    Animated.spring(retakeScale, {
+  const handleSavePressOut = () => {
+    setSavePressed(false);
+    Animated.spring(saveScale, {
       toValue: 1,
       useNativeDriver: true,
       friction: 3,
@@ -72,46 +80,90 @@ export default function OverlayScreen({ route, navigation }: Props) {
     })();
   }, [location]);
 
+  const handleDiscard = () => {
+    navigation.goBack();
+  };
+
+  const handleSave = async () => {
+    if (saving) return;
+    setSaving(true);
+    setSaveMessage(null);
+
+    try {
+      console.log('[save] requesting media library permission...');
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      console.log('[save] permission status:', status);
+
+      if (status !== 'granted') {
+        setSaveMessage('Photos permission denied');
+        return;
+      }
+
+      console.log('[save] capturing composed view...');
+      const uri = await captureRef(captureAreaRef, { format: 'jpg', quality: 0.92 });
+      console.log('[save] captured to', uri);
+
+      await MediaLibrary.saveToLibraryAsync(uri);
+      console.log('[save] saved to camera roll');
+      setSaveMessage('Saved to Camera Roll');
+    } catch (err) {
+      console.log('[save] error', err);
+      setSaveMessage(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <Image source={{ uri: photoUri }} style={styles.photo} />
+      <View ref={captureAreaRef} collapsable={false} style={styles.captureArea}>
+        <Image source={{ uri: photoUri }} style={styles.photo} />
 
-      <View style={styles.locationBox}>
-        {locationError ? (
-          <Text style={styles.locationText}>{locationError}</Text>
-        ) : location ? (
-          <Text style={styles.locationText}>
-            {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
-          </Text>
-        ) : (
-          <Text style={styles.locationText}>Getting location...</Text>
-        )}
+        <View style={styles.locationBox}>
+          {locationError ? (
+            <Text style={styles.locationText}>{locationError}</Text>
+          ) : location ? (
+            <Text style={styles.locationText}>
+              {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
+            </Text>
+          ) : (
+            <Text style={styles.locationText}>Getting location...</Text>
+          )}
+        </View>
+
+        <ScrollView style={styles.momentBox}>
+          {momentError ? (
+            <Text style={styles.momentText}>{momentError}</Text>
+          ) : moment ? (
+            <Text style={styles.momentText}>{JSON.stringify(moment, null, 2)}</Text>
+          ) : (
+            <Text style={styles.momentText}>Loading moment data...</Text>
+          )}
+        </ScrollView>
       </View>
 
-      <ScrollView style={styles.momentBox}>
-        {momentError ? (
-          <Text style={styles.momentText}>{momentError}</Text>
-        ) : moment ? (
-          <Text style={styles.momentText}>{JSON.stringify(moment, null, 2)}</Text>
-        ) : (
-          <Text style={styles.momentText}>Loading moment data...</Text>
-        )}
-      </ScrollView>
+      <CloseButton onPress={handleDiscard} />
+
+      {saveMessage && (
+        <View style={styles.saveMessageBox}>
+          <Text style={styles.saveMessageText}>{saveMessage}</Text>
+        </View>
+      )}
 
       <Pressable
-        style={styles.retakeHitArea}
-        onPress={() => navigation.goBack()}
-        onPressIn={handleRetakePressIn}
-        onPressOut={handleRetakePressOut}
+        style={styles.saveHitArea}
+        onPress={handleSave}
+        onPressIn={handleSavePressIn}
+        onPressOut={handleSavePressOut}
       >
         <Animated.View
           style={[
-            styles.retakeButton,
-            retakePressed && styles.retakeButtonPressed,
-            { transform: [{ scale: retakeScale }] },
+            styles.saveButton,
+            savePressed && styles.saveButtonPressed,
+            { transform: [{ scale: saveScale }] },
           ]}
         >
-          <Text style={styles.retakeText}>Retake</Text>
+          <Text style={styles.saveText}>{saving ? 'Saving...' : 'Save'}</Text>
         </Animated.View>
       </Pressable>
     </View>
@@ -124,6 +176,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#111',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  captureArea: {
+    flex: 1,
+    width: '100%',
   },
   photo: {
     flex: 1,
@@ -158,22 +214,36 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: 'Courier',
   },
-  retakeHitArea: {
+  saveMessageBox: {
+    position: 'absolute',
+    bottom: 100,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  saveMessageText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  saveHitArea: {
     position: 'absolute',
     bottom: 40,
     alignSelf: 'center',
   },
-  retakeButton: {
-    backgroundColor: 'rgba(0,0,0,0.6)',
+  saveButton: {
+    backgroundColor: '#fff',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
   },
-  retakeButtonPressed: {
-    backgroundColor: 'rgba(0,0,0,0.85)',
+  saveButtonPressed: {
+    backgroundColor: '#ddd',
   },
-  retakeText: {
-    color: '#fff',
+  saveText: {
+    color: '#111',
     fontSize: 16,
     fontWeight: '600',
   },

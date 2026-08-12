@@ -1,7 +1,7 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as Location from 'expo-location';
-import { useEffect, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { fetchMoment } from '../api/moment';
 import { RootStackParamList } from '../navigation/RootNavigator';
@@ -15,6 +15,28 @@ export default function OverlayScreen({ route, navigation }: Props) {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [moment, setMoment] = useState<Moment | null>(null);
   const [momentError, setMomentError] = useState<string | null>(null);
+  const [retakePressed, setRetakePressed] = useState(false);
+  const retakeScale = useRef(new Animated.Value(1)).current;
+
+  const handleRetakePressIn = () => {
+    setRetakePressed(true);
+    Animated.spring(retakeScale, {
+      toValue: 0.92,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 0,
+    }).start();
+  };
+
+  const handleRetakePressOut = () => {
+    setRetakePressed(false);
+    Animated.spring(retakeScale, {
+      toValue: 1,
+      useNativeDriver: true,
+      friction: 3,
+      tension: 40,
+    }).start();
+  };
 
   // get device location first
   useEffect(() => {
@@ -76,8 +98,21 @@ export default function OverlayScreen({ route, navigation }: Props) {
         )}
       </ScrollView>
 
-      <Pressable style={styles.retakeButton} onPress={() => navigation.goBack()}>
-        <Text style={styles.retakeText}>Retake</Text>
+      <Pressable
+        style={styles.retakeHitArea}
+        onPress={() => navigation.goBack()}
+        onPressIn={handleRetakePressIn}
+        onPressOut={handleRetakePressOut}
+      >
+        <Animated.View
+          style={[
+            styles.retakeButton,
+            retakePressed && styles.retakeButtonPressed,
+            { transform: [{ scale: retakeScale }] },
+          ]}
+        >
+          <Text style={styles.retakeText}>Retake</Text>
+        </Animated.View>
       </Pressable>
     </View>
   );
@@ -123,14 +158,19 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: 'Courier',
   },
-  retakeButton: {
+  retakeHitArea: {
     position: 'absolute',
     bottom: 40,
     alignSelf: 'center',
+  },
+  retakeButton: {
     backgroundColor: 'rgba(0,0,0,0.6)',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
+  },
+  retakeButtonPressed: {
+    backgroundColor: 'rgba(0,0,0,0.85)',
   },
   retakeText: {
     color: '#fff',

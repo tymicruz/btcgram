@@ -24,7 +24,7 @@ Camera-only capture (no upload, no camera-roll picker), overlays this API's data
 
 - ✅ 1. Scaffold a blank Expo (TypeScript) app, running on a physical device via Expo Go
 - ✅ 2. "Hello, btcgram!" placeholder screen (confirms the dev loop works)
-- ⬜ 3. Live camera preview
+- ✅ 3. Live camera preview
 - ⬜ 4. Capture a photo and display it
 - ⬜ 5. Two-screen navigation (Camera → Overlay)
 - ⬜ 6. Fetch device location

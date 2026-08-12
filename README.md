@@ -35,6 +35,22 @@ Camera-only capture (no upload, no camera-roll picker), overlays this API's data
 
 Local dev: run the backend via Docker (see above), point the Expo app at your machine's LAN IP so a physical phone can reach it over Wi-Fi. See `CLAUDE.md` for the full architecture/decisions behind this.
 
+### Future roadmap (post-POC, not yet started)
+
+Not part of the milestone plan above. Out of scope until the core camera → backend → overlay → save flow (milestones 1-10) is fully functional and polished.
+
+**Cryptographically verified Moments**: investigate [C2PA](https://c2pa.org/)/Content Credentials so a Moment can be cryptographically tied to having come from an authorized btcgram capture flow, and to prove its signed content hasn't been altered since capture. Longer term, the backend should reject Moments without valid capture provenance rather than accepting arbitrary uploaded images.
+
+Scope limit worth stating explicitly: C2PA/signatures prove **provenance and integrity** (this file came from a specific signer and is unmodified) — not that **the physical scene itself is genuine**. Someone could point the btcgram camera at a photo or a screen and still get a validly signed Moment of a fake scene. Don't oversell what this feature actually proves.
+
+Key management (rough shape, needs real investigation before building):
+- No single permanent private key embedded in the Expo/JS bundle. Look into a key hierarchy — a long-lived btcgram trust/root identity, with individual devices/app installs holding their own signing credentials.
+- Device keys should use Apple's hardware-backed secure key storage where available, not software-only storage.
+- Needs key rotation and revocation, so a retired or compromised device's key can be revoked without invalidating previously-signed Moments.
+- App updates, new iPhone generations, and device turnover shouldn't require preserving one key forever — the backend should track and manage a set of trusted, rotatable public keys/credentials.
+
+Explicitly separate concerns: C2PA already handles cryptographic hashing/signing internally, so this isn't "SHA-ing the signature" — a standalone SHA-256 hash of a Moment could later be useful as an identifier or for anchoring, but that's a distinct idea from the C2PA signature itself. Blockchain anchoring and NFTs are optional future experiments, not part of the core verification design.
+
 ## Tech stack
 
 - Java 25 (Temurin)

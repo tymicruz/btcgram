@@ -8,11 +8,15 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Feed'>;
 export default function FeedScreen({ navigation }: Props) {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Moments</Text>
-      <Text style={styles.emptyText}>No Moments yet. Capture your first one.</Text>
+      <View style={styles.content}>
+        <Text style={styles.title}>Moments</Text>
+        <Text style={styles.emptyText}>No Moments yet. Capture your first one.</Text>
+      </View>
 
-      <Pressable style={styles.newButton} onPress={() => navigation.navigate('Camera')}>
-        <Text style={styles.newButtonText}>📷  New Moment</Text>
+      <Pressable style={styles.newButtonHitArea} onPress={() => navigation.navigate('Camera')}>
+        <View style={styles.newButton}>
+          <Text style={styles.newButtonText}>📷  New Moment</Text>
+        </View>
       </Pressable>
     </View>
   );
@@ -22,6 +26,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#111',
+  },
+  content: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 24,
@@ -36,7 +43,11 @@ const styles = StyleSheet.create({
     color: '#8b887f',
     fontSize: 15,
     textAlign: 'center',
-    marginBottom: 32,
+  },
+  newButtonHitArea: {
+    position: 'absolute',
+    bottom: 40,
+    alignSelf: 'center',
   },
   newButton: {
     backgroundColor: '#fff',

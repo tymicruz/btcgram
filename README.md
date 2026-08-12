@@ -136,6 +136,34 @@ http://localhost:8080/api/moment?lat=0.0&lon=-160.0
 
 > Note: `temperature` is returned in **Fahrenheit** (`temperature_unit=fahrenheit` is set in `WeatherService`).
 
+## Running the frontend
+
+All commands below run from the `frontend/` folder (`cd frontend` first).
+
+**The dev server always has to be running, no matter which option below you use** — it's what serves your JS code to the app on your phone:
+```bash
+npx expo start
+```
+Leave that running in a terminal. Code changes show up on your phone automatically while it's running (no restart needed) — except after installing a new package or editing `app.json`/`.env`, which do need the dev server restarted.
+
+### Option 1: Expo Go (day-to-day — no Xcode needed)
+
+1. Install the [Expo Go](https://expo.dev/go) app on your phone.
+2. With `npx expo start` running, scan the QR code it prints (Camera app on iOS, Expo Go's scanner on Android).
+3. Phone and computer must be on the same Wi-Fi.
+
+### Option 2: Real native build on your iPhone (needs Xcode, Mac only)
+
+Yes, this one needs Xcode installed. Once the native project exists (`npx expo prebuild --platform ios` — only needed the first time, or after adding a new native package), **don't use `npx expo run:ios`** — it's currently broken on newer Xcode versions. Instead:
+
+1. `open ios/frontend.xcworkspace` (open the `.xcworkspace`, not `.xcodeproj`)
+2. In Xcode, pick your iPhone from the device dropdown, then hit the ▶️ Run button.
+3. Still need `npx expo start` running separately, same as Expo Go — the native build isn't standalone, it fetches your JS from the dev server too.
+
+**Coming back to this another day**: the `ios/` folder and its Xcode signing setup (Team, bundle ID) stay on your disk once created — you do **not** need to redo `prebuild` or reconfigure signing again. Just reopen `ios/frontend.xcworkspace` and hit Run. Only redo `prebuild` if you delete `ios/` or add a new native package. The app already installed on your phone from a previous session will also keep working on its own for opening/closing — it just needs `npx expo start` running whenever you want it to actually load your latest code.
+
+The `ios/`/`android/` folders are gitignored — regenerated from `app.json` via `expo prebuild`, not hand-edited.
+
 ## Project structure
 
 ```

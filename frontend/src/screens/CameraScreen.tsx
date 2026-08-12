@@ -1,7 +1,7 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useEffect, useRef } from 'react';
-import { Button, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Button, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { RootStackParamList } from '../navigation/RootNavigator';
 
@@ -10,6 +10,8 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Camera'>;
 export default function CameraScreen({ navigation }: Props) {
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
+  const [pressed, setPressed] = useState(false);
+  const scale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     // permission starts out null while Expo is still checking; once it
@@ -18,6 +20,28 @@ export default function CameraScreen({ navigation }: Props) {
       requestPermission();
     }
   }, [permission]);
+
+  const handlePressIn = () => {
+    setPressed(true);
+    // quick, no-bounce compress while the finger is actually down
+    Animated.spring(scale, {
+      toValue: 0.85,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 0,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    setPressed(false);
+    // low friction + high tension = overshoots past 1 before settling, the "bounce"
+    Animated.spring(scale, {
+      toValue: 1,
+      useNativeDriver: true,
+      friction: 3,
+      tension: 40,
+    }).start();
+  };
 
   const takePhoto = async () => {
     if (!cameraRef.current) return;
@@ -47,7 +71,17 @@ export default function CameraScreen({ navigation }: Props) {
       <View style={styles.overlay}>
         <Text style={styles.overlayText}>btcgram</Text>
       </View>
-      <Pressable style={styles.shutterButton} onPress={takePhoto} />
+      <View style={styles.shutterRing}>
+        <Pressable onPress={takePhoto} onPressIn={handlePressIn} onPressOut={handlePressOut}>
+          <Animated.View
+            style={[
+              styles.shutterInner,
+              pressed && styles.shutterInnerPressed,
+              { transform: [{ scale }] },
+            ]}
+          />
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -86,15 +120,25 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 8,
   },
-  shutterButton: {
+  shutterRing: {
     position: 'absolute',
     bottom: 40,
     alignSelf: 'center',
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: '#fff',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     borderWidth: 4,
-    borderColor: 'rgba(255,255,255,0.4)',
+    borderColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  shutterInner: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#fff',
+  },
+  shutterInnerPressed: {
+    backgroundColor: '#ddd',
   },
 });

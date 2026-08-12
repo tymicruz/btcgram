@@ -26,7 +26,7 @@ Camera-only capture (no upload, no camera-roll picker), overlays this API's data
 - ✅ 2. "Hello, btcgram!" placeholder screen (confirms the dev loop works)
 - ✅ 3. Live camera preview
 - ✅ 4. Capture a photo and display it
-- ⬜ 5. Two-screen navigation (Camera → Overlay)
+- ✅ 5. Two-screen navigation (Camera → Overlay)
 - ⬜ 6. Fetch device location
 - ⬜ 7. Call `/api/moment` with that location and display the raw response
 - ⬜ 8. Styled overlay (city, weather, local time, BTC price laid over the photo)

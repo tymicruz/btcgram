@@ -1,17 +1,22 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as Location from 'expo-location';
 import { useEffect, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { fetchMoment } from '../api/moment';
 import { RootStackParamList } from '../navigation/RootNavigator';
+import { Moment } from '../types/moment';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Overlay'>;
 
 export default function OverlayScreen({ route, navigation }: Props) {
   const { photoUri } = route.params;
   const [location, setLocation] = useState<Location.LocationObjectCoords | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [moment, setMoment] = useState<Moment | null>(null);
+  const [momentError, setMomentError] = useState<string | null>(null);
 
+  // get device location first
   useEffect(() => {
     (async () => {
       console.log('[location] requesting permission...');
@@ -19,7 +24,7 @@ export default function OverlayScreen({ route, navigation }: Props) {
       console.log('[location] permission status:', status);
 
       if (status !== 'granted') {
-        setErrorMsg('Location permission denied');
+        setLocationError('Location permission denied');
         return;
       }
 
@@ -30,13 +35,28 @@ export default function OverlayScreen({ route, navigation }: Props) {
     })();
   }, []);
 
+  // once we have location, call the backend
+  useEffect(() => {
+    if (!location) return;
+
+    (async () => {
+      try {
+        const data = await fetchMoment(location.latitude, location.longitude);
+        setMoment(data);
+      } catch (err) {
+        console.log('[moment] error', err);
+        setMomentError(err instanceof Error ? err.message : String(err));
+      }
+    })();
+  }, [location]);
+
   return (
     <View style={styles.container}>
       <Image source={{ uri: photoUri }} style={styles.photo} />
 
       <View style={styles.locationBox}>
-        {errorMsg ? (
-          <Text style={styles.locationText}>{errorMsg}</Text>
+        {locationError ? (
+          <Text style={styles.locationText}>{locationError}</Text>
         ) : location ? (
           <Text style={styles.locationText}>
             {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
@@ -45,6 +65,16 @@ export default function OverlayScreen({ route, navigation }: Props) {
           <Text style={styles.locationText}>Getting location...</Text>
         )}
       </View>
+
+      <ScrollView style={styles.momentBox}>
+        {momentError ? (
+          <Text style={styles.momentText}>{momentError}</Text>
+        ) : moment ? (
+          <Text style={styles.momentText}>{JSON.stringify(moment, null, 2)}</Text>
+        ) : (
+          <Text style={styles.momentText}>Loading moment data...</Text>
+        )}
+      </ScrollView>
 
       <Pressable style={styles.retakeButton} onPress={() => navigation.goBack()}>
         <Text style={styles.retakeText}>Retake</Text>
@@ -77,6 +107,21 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  momentBox: {
+    position: 'absolute',
+    top: 110,
+    left: 20,
+    right: 20,
+    maxHeight: 200,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 8,
+    padding: 12,
+  },
+  momentText: {
+    color: '#fff',
+    fontSize: 13,
+    fontFamily: 'Courier',
   },
   retakeButton: {
     position: 'absolute',

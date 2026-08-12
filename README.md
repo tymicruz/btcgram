@@ -28,7 +28,7 @@ Camera-only capture (no upload, no camera-roll picker), overlays this API's data
 - ✅ 4. Capture a photo and display it
 - ✅ 5. Two-screen navigation (Camera → Overlay)
 - ✅ 6. Fetch device location
-- ⬜ 7. Call `/api/moment` with that location and display the raw response
+- ✅ 7. Call `/api/moment` with that location and display the raw response
 - ⬜ 8. Styled overlay (city, weather, local time, BTC price laid over the photo)
 - ⬜ 9. Save the composed image to the camera roll
 - ⬜ 10. Error/loading states polish pass (permissions, network failures, sentinel values)

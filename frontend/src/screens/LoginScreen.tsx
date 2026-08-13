@@ -1,3 +1,4 @@
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -7,9 +8,15 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  View,
 } from 'react-native';
 
 import { supabase } from '../lib/supabase';
+
+GoogleSignin.configure({
+  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+  iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+});
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -49,6 +56,43 @@ export default function LoginScreen() {
     }
 
     setLoading(false);
+  };
+
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    setErrorMsg(null);
+    setSuccessMsg(null);
+
+    try {
+      // harmless no-op on iOS - this check matters once Android's added
+      await GoogleSignin.hasPlayServices();
+
+      console.log('[auth] starting Google sign-in...');
+      const response = await GoogleSignin.signIn();
+
+      if (response.type !== 'success' || !response.data.idToken) {
+        console.log('[auth] Google sign-in cancelled or returned no token');
+        return;
+      }
+
+      console.log('[auth] got Google ID token, signing in to Supabase...');
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: 'google',
+        token: response.data.idToken,
+      });
+
+      if (error) {
+        console.log('[auth] Supabase error', error.message);
+        setErrorMsg(error.message);
+      }
+      // on success, AuthContext's listener picks up the new session and
+      // navigates us away, same as email/password
+    } catch (err) {
+      console.log('[auth] Google sign-in error', err);
+      setErrorMsg(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -96,6 +140,20 @@ export default function LoginScreen() {
         <Text style={styles.toggleText}>
           {isSignUp ? 'Already have an account? Log In' : "Don't have an account? Sign Up"}
         </Text>
+      </Pressable>
+
+      <View style={styles.dividerRow}>
+        <View style={styles.dividerLine} />
+        <Text style={styles.dividerText}>or</Text>
+        <View style={styles.dividerLine} />
+      </View>
+
+      <Pressable
+        style={[styles.googleButton, loading && styles.submitButtonDisabled]}
+        onPress={handleGoogleSignIn}
+        disabled={loading}
+      >
+        <Text style={styles.googleText}>Continue with Google</Text>
       </Pressable>
     </KeyboardAvoidingView>
   );
@@ -158,5 +216,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     marginTop: 20,
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 28,
+    marginBottom: 16,
+  },
+  dividerLine: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#33312c',
+  },
+  dividerText: {
+    color: '#8b887f',
+    fontSize: 13,
+    marginHorizontal: 10,
+  },
+  googleButton: {
+    backgroundColor: '#1c1b19',
+    borderWidth: 1,
+    borderColor: '#33312c',
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  googleText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

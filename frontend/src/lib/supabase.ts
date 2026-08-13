@@ -1,5 +1,5 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
-import * as SecureStore from 'expo-secure-store';
 import { AppState } from 'react-native';
 import 'react-native-url-polyfill/auto';
 
@@ -13,21 +13,13 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-// Supabase's client expects a storage object shaped like AsyncStorage
-// (getItem/setItem/removeItem). SecureStore's actual API is named
-// differently (getItemAsync/setItemAsync/deleteItemAsync) and is backed
-// by the iOS Keychain / Android Keystore - real encrypted storage,
-// unlike AsyncStorage's plain unencrypted files - so this adapter just
-// translates between the two shapes.
-const SecureStoreAdapter = {
-  getItem: (key: string) => SecureStore.getItemAsync(key),
-  setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
-  removeItem: (key: string) => SecureStore.deleteItemAsync(key),
-};
-
+// Using AsyncStorage (plain, unencrypted) rather than expo-secure-store
+// (Keychain-backed) for now, on purpose - easier to actually inspect the
+// stored session directly while learning how this works. Swap to
+// SecureStore later once that's done.
 export const supabase = createClient(supabaseUrl ?? '', supabaseAnonKey ?? '', {
   auth: {
-    storage: SecureStoreAdapter,
+    storage: AsyncStorage,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,

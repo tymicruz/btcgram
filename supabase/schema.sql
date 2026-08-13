@@ -7,6 +7,7 @@ create table moments (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) default auth.uid(),
   photo_url text not null,
+  photo_path text not null,
   city text,
   country text,
   temperature double precision,
@@ -32,6 +33,10 @@ create policy "Users can insert their own moments"
   on moments for insert
   with check (auth.uid() = user_id);
 
+create policy "Users can delete their own moments"
+  on moments for delete
+  using (auth.uid() = user_id);
+
 -- A storage bucket to hold the actual photo files. Public means anyone
 -- with a photo's URL can view it (simplest setup for now) - only the
 -- upload/write side is restricted below.
@@ -49,6 +54,13 @@ create policy "Public can view moment photos"
 create policy "Users can upload into their own folder"
   on storage.objects for insert
   with check (
+    bucket_id = 'moments'
+    and auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+create policy "Users can delete their own moment photos"
+  on storage.objects for delete
+  using (
     bucket_id = 'moments'
     and auth.uid()::text = (storage.foldername(name))[1]
   );

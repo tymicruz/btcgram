@@ -6,13 +6,16 @@ import { AuthProvider, useAuth } from '../context/AuthContext';
 import CameraScreen from '../screens/CameraScreen';
 import FeedScreen from '../screens/FeedScreen';
 import LoginScreen from '../screens/LoginScreen';
+import MomentDetailScreen from '../screens/MomentDetailScreen';
 import OverlayScreen from '../screens/OverlayScreen';
+import { StoredMoment } from '../types/storedMoment';
 
 export type RootStackParamList = {
   Login: undefined;
   Feed: undefined;
   Camera: undefined;
   Overlay: { photoUri: string };
+  MomentDetail: { moment: StoredMoment };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -34,6 +37,7 @@ function Navigation() {
             <Stack.Screen name="Feed" component={FeedScreen} />
             <Stack.Screen name="Camera" component={CameraScreen} />
             <Stack.Screen name="Overlay" component={OverlayScreen} />
+            <Stack.Screen name="MomentDetail" component={MomentDetailScreen} />
           </>
         ) : (
           <Stack.Screen name="Login" component={LoginScreen} />

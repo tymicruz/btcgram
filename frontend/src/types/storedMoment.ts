@@ -3,6 +3,7 @@ export type StoredMoment = {
   id: string;
   user_id: string;
   photo_url: string;
+  photo_path: string | null;
   city: string | null;
   country: string | null;
   temperature: number | null;

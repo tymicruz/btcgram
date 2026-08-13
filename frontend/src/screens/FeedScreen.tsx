@@ -62,17 +62,33 @@ export default function FeedScreen({ navigation }: Props) {
           data={moments}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
-          renderItem={({ item }) => (
-            <View style={styles.card}>
-              <Image source={{ uri: item.photo_url }} style={styles.thumbnail} />
-              <View style={styles.cardInfo}>
-                <Text style={styles.cardCity}>{item.city ?? 'Unknown location'}</Text>
-                <Text style={styles.cardDate}>
-                  {new Date(item.created_at).toLocaleString()}
-                </Text>
-              </View>
-            </View>
-          )}
+          renderItem={({ item }) => {
+            const createdAt = new Date(item.created_at);
+            return (
+              <Pressable
+                style={styles.card}
+                onPress={() => navigation.navigate('MomentDetail', { moment: item })}
+              >
+                <Image source={{ uri: item.photo_url }} style={styles.thumbnail} />
+                <View style={styles.cardInfo}>
+                  <Text style={styles.cardPrice}>
+                    {item.btc_price_usd != null
+                      ? `$${Math.round(item.btc_price_usd).toLocaleString()}`
+                      : 'BTC price unavailable'}
+                  </Text>
+                  <Text style={styles.cardDate}>
+                    {createdAt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    {' at '}
+                    {createdAt.toLocaleTimeString(undefined, {
+                      hour: 'numeric',
+                      minute: '2-digit',
+                    })}
+                  </Text>
+                  <Text style={styles.cardCity}>{item.city ?? 'Unknown location'}</Text>
+                </View>
+              </Pressable>
+            );
+          }}
         />
       )}
 
@@ -137,15 +153,21 @@ const styles = StyleSheet.create({
   cardInfo: {
     marginLeft: 12,
   },
-  cardCity: {
+  cardPrice: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
   },
   cardDate: {
-    color: '#8b887f',
-    fontSize: 13,
+    color: '#d8d5cd',
+    fontSize: 14,
+    fontWeight: '600',
     marginTop: 2,
+  },
+  cardCity: {
+    color: '#8b887f',
+    fontSize: 12,
+    marginTop: 3,
   },
   newButtonHitArea: {
     position: 'absolute',

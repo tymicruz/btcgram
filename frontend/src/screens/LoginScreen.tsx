@@ -7,7 +7,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  View,
 } from 'react-native';
 
 import { supabase } from '../lib/supabase';
@@ -18,22 +17,37 @@ export default function LoginScreen() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const handleSubmit = async () => {
     setLoading(true);
     setErrorMsg(null);
+    setSuccessMsg(null);
 
-    console.log(`[auth] ${isSignUp ? 'signing up' : 'logging in'}...`);
-    const { error } = isSignUp
-      ? await supabase.auth.signUp({ email, password })
-      : await supabase.auth.signInWithPassword({ email, password });
+    if (isSignUp) {
+      console.log('[auth] signing up...');
+      const { data, error } = await supabase.auth.signUp({ email, password });
 
-    if (error) {
-      console.log('[auth] error', error.message);
-      setErrorMsg(error.message);
+      if (error) {
+        console.log('[auth] error', error.message);
+        setErrorMsg(error.message);
+      } else if (!data.session) {
+        // signed up successfully, but email confirmation is required
+        // before a session gets created - nothing to navigate to yet
+        console.log('[auth] signed up, awaiting email confirmation');
+        setSuccessMsg('Check your email to confirm your account, then log in.');
+      }
+      // if data.session does exist, we're already logged in - the
+      // AuthContext's listener picks that up and navigates us away
     } else {
-      console.log('[auth] success');
+      console.log('[auth] logging in...');
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        console.log('[auth] error', error.message);
+        setErrorMsg(error.message);
+      }
     }
+
     setLoading(false);
   };
 
@@ -64,6 +78,7 @@ export default function LoginScreen() {
       />
 
       {errorMsg && <Text style={styles.errorText}>{errorMsg}</Text>}
+      {successMsg && <Text style={styles.successText}>{successMsg}</Text>}
 
       <Pressable
         style={[styles.submitButton, loading && styles.submitButtonDisabled]}
@@ -113,6 +128,12 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: '#ff6b5e',
+    fontSize: 14,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  successText: {
+    color: '#7fd88f',
     fontSize: 14,
     marginBottom: 12,
     textAlign: 'center',

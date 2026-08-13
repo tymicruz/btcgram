@@ -34,7 +34,8 @@
         {
           "savePhotosPermission": "btcgram saves your Moment photos to your camera roll when you tap Save."
         }
-      ]
+      ],
+      "expo-secure-store"
     ]
   }
 }

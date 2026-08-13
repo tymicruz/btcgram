@@ -16,7 +16,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // check for an existing session on app start (e.g. still logged in
-    // from last time, thanks to the AsyncStorage persistence we set up)
+    // from last time, thanks to the SecureStore persistence we set up)
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setLoading(false);

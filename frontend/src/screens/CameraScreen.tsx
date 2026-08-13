@@ -69,19 +69,19 @@ export default function CameraScreen({ navigation }: Props) {
   return (
     <View style={styles.container}>
       <CameraView ref={cameraRef} style={styles.camera} facing="back" />
-      <View style={styles.overlay}>
-        <Text style={styles.overlayText}>btcgram</Text>
-      </View>
-      <View style={styles.shutterRing}>
-        <Pressable onPress={takePhoto} onPressIn={handlePressIn} onPressOut={handlePressOut}>
-          <Animated.View
-            style={[
-              styles.shutterInner,
-              pressed && styles.shutterInnerPressed,
-              { transform: [{ scale }] },
-            ]}
-          />
-        </Pressable>
+      <View style={styles.captureControls}>
+        <View style={styles.shutterRing}>
+          <Pressable onPress={takePhoto} onPressIn={handlePressIn} onPressOut={handlePressOut}>
+            <Animated.View
+              style={[
+                styles.shutterInner,
+                pressed && styles.shutterInnerPressed,
+                { transform: [{ scale }] },
+              ]}
+            />
+          </Pressable>
+        </View>
+        <Text style={styles.captureLabel}>btcgram</Text>
       </View>
       <CloseButton onPress={() => navigation.goBack()} />
     </View>
@@ -106,26 +106,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingHorizontal: 24,
   },
-  overlay: {
-    position: 'absolute',
-    bottom: 140,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-  },
-  overlayText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '700',
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  shutterRing: {
+  captureControls: {
     position: 'absolute',
     bottom: 40,
     alignSelf: 'center',
+    alignItems: 'center',
+  },
+  shutterRing: {
     width: 80,
     height: 80,
     borderRadius: 40,
@@ -142,5 +129,12 @@ const styles = StyleSheet.create({
   },
   shutterInnerPressed: {
     backgroundColor: '#ddd',
+  },
+  captureLabel: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    marginTop: 10,
   },
 });

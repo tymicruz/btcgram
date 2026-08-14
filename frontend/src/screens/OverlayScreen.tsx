@@ -6,7 +6,9 @@ import { Animated, Image, Pressable, ScrollView, StyleSheet, Text, View } from '
 import { captureRef } from 'react-native-view-shot';
 
 import { fetchMoment } from '../api/moment';
+import { postMoment } from '../api/moments';
 import CloseButton from '../components/CloseButton';
+import { useAuth } from '../context/AuthContext';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { Moment } from '../types/moment';
 
@@ -14,6 +16,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Overlay'>;
 
 export default function OverlayScreen({ route, navigation }: Props) {
   const { photoUri } = route.params;
+  const { session } = useAuth();
   const [location, setLocation] = useState<Location.LocationObjectCoords | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [moment, setMoment] = useState<Moment | null>(null);
@@ -25,6 +28,11 @@ export default function OverlayScreen({ route, navigation }: Props) {
   const saveScale = useRef(new Animated.Value(1)).current;
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+
+  const [postPressed, setPostPressed] = useState(false);
+  const postScale = useRef(new Animated.Value(1)).current;
+  const [posting, setPosting] = useState(false);
+  const [postError, setPostError] = useState<string | null>(null);
 
   const handleSavePressIn = () => {
     setSavePressed(true);
@@ -39,6 +47,26 @@ export default function OverlayScreen({ route, navigation }: Props) {
   const handleSavePressOut = () => {
     setSavePressed(false);
     Animated.spring(saveScale, {
+      toValue: 1,
+      useNativeDriver: true,
+      friction: 3,
+      tension: 40,
+    }).start();
+  };
+
+  const handlePostPressIn = () => {
+    setPostPressed(true);
+    Animated.spring(postScale, {
+      toValue: 0.92,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 0,
+    }).start();
+  };
+
+  const handlePostPressOut = () => {
+    setPostPressed(false);
+    Animated.spring(postScale, {
       toValue: 1,
       useNativeDriver: true,
       friction: 3,
@@ -114,6 +142,42 @@ export default function OverlayScreen({ route, navigation }: Props) {
     }
   };
 
+  const handlePost = async () => {
+    if (posting) return;
+
+    if (!session) {
+      setPostError('You need to be logged in to post.');
+      return;
+    }
+    if (!moment || !location) {
+      setPostError('Still loading Moment data - try again in a moment.');
+      return;
+    }
+
+    setPosting(true);
+    setPostError(null);
+
+    try {
+      console.log('[post] capturing composed view...');
+      const composedUri = await captureRef(captureAreaRef, { format: 'jpg', quality: 0.92 });
+      console.log('[post] captured to', composedUri);
+
+      await postMoment(session.user.id, {
+        ...moment,
+        photoUri: composedUri,
+        latitude: location.latitude,
+        longitude: location.longitude,
+      });
+      console.log('[post] success, returning to feed');
+      navigation.popToTop();
+    } catch (err) {
+      console.log('[post] error', err);
+      setPostError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setPosting(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View ref={captureAreaRef} collapsable={false} style={styles.captureArea}>
@@ -144,28 +208,47 @@ export default function OverlayScreen({ route, navigation }: Props) {
 
       <CloseButton onPress={handleDiscard} />
 
-      {saveMessage && (
+      {(saveMessage || postError) && (
         <View style={styles.saveMessageBox}>
-          <Text style={styles.saveMessageText}>{saveMessage}</Text>
+          <Text style={styles.saveMessageText}>{saveMessage ?? postError}</Text>
         </View>
       )}
 
-      <Pressable
-        style={styles.saveHitArea}
-        onPress={handleSave}
-        onPressIn={handleSavePressIn}
-        onPressOut={handleSavePressOut}
-      >
-        <Animated.View
-          style={[
-            styles.saveButton,
-            savePressed && styles.saveButtonPressed,
-            { transform: [{ scale: saveScale }] },
-          ]}
+      <View style={styles.actionRow}>
+        <Pressable
+          style={styles.actionHitArea}
+          onPress={handleSave}
+          onPressIn={handleSavePressIn}
+          onPressOut={handleSavePressOut}
         >
-          <Text style={styles.saveText}>{saving ? 'Saving...' : 'Save'}</Text>
-        </Animated.View>
-      </Pressable>
+          <Animated.View
+            style={[
+              styles.saveButton,
+              savePressed && styles.saveButtonPressed,
+              { transform: [{ scale: saveScale }] },
+            ]}
+          >
+            <Text style={styles.saveText}>{saving ? 'Saving...' : 'Save'}</Text>
+          </Animated.View>
+        </Pressable>
+
+        <Pressable
+          style={styles.actionHitArea}
+          onPress={handlePost}
+          onPressIn={handlePostPressIn}
+          onPressOut={handlePostPressOut}
+        >
+          <Animated.View
+            style={[
+              styles.postButton,
+              postPressed && styles.postButtonPressed,
+              { transform: [{ scale: postScale }] },
+            ]}
+          >
+            <Text style={styles.postText}>{posting ? 'Posting...' : 'Post'}</Text>
+          </Animated.View>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -228,11 +311,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  saveHitArea: {
+  actionRow: {
     position: 'absolute',
     bottom: 40,
-    alignSelf: 'center',
+    flexDirection: 'row',
+    gap: 12,
   },
+  actionHitArea: {},
   saveButton: {
     backgroundColor: '#fff',
     paddingHorizontal: 20,
@@ -244,6 +329,22 @@ const styles = StyleSheet.create({
   },
   saveText: {
     color: '#111',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  postButton: {
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderWidth: 1,
+    borderColor: '#fff',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  postButtonPressed: {
+    backgroundColor: 'rgba(0,0,0,0.85)',
+  },
+  postText: {
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },

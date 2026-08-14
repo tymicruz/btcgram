@@ -2,12 +2,15 @@ import { Pressable, StyleSheet, Text } from 'react-native';
 
 type Props = {
   onPress: () => void;
+  // same top-left icon button used for both "close/discard" (✕) and
+  // "go back" (‹) - only the glyph and its meaning differ
+  icon?: string;
 };
 
-export default function CloseButton({ onPress }: Props) {
+export default function CloseButton({ onPress, icon = '✕' }: Props) {
   return (
     <Pressable style={styles.closeButton} onPress={onPress}>
-      <Text style={styles.closeButtonText}>✕</Text>
+      <Text style={styles.closeButtonText}>{icon}</Text>
     </Pressable>
   );
 }

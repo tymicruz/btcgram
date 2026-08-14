@@ -34,6 +34,13 @@
         {
           "savePhotosPermission": "btcgram saves your Moment photos to your camera roll when you tap Save."
         }
+      ],
+      "expo-secure-store",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.9347957512-kfhha8afit25e8p3cjpui839fo25l866"
+        }
       ]
     ]
   }

@@ -29,17 +29,29 @@ Camera-only capture (no upload, no camera-roll picker), overlays this API's data
 - ✅ 5. Two-screen navigation (Camera → Overlay)
 - ✅ 6. Fetch device location
 - ✅ 7. Call `/api/moment` with that location and display the raw response
-- ⬜ 8. Styled overlay (city, weather, local time, BTC price laid over the photo)
-- ⬜ 9. Save the composed image to the camera roll
-- ⬜ 10. Error/loading states polish pass (permissions, network failures, sentinel values)
+- ⬜ 8. Styled overlay (city, weather, local time, BTC price laid over the photo) — minimal pass, not a priority right now
+- ✅ 9. Save the composed image to the camera roll
+- ⬜ 10. Error/loading states polish pass (permissions, network failures, sentinel values) — not a priority right now, the app works well enough as-is
 
 Local dev: run the backend via Docker (see above), point the Expo app at your machine's LAN IP so a physical phone can reach it over Wi-Fi. See `CLAUDE.md` for the full architecture/decisions behind this.
 
-### Future roadmap (post-POC, not yet started)
+### v2 — accounts, a real Feed, and posting Moments to the cloud (on the `dev` branch, not yet merged to `main`)
 
-Not part of the milestone plan above. Out of scope until the core camera → backend → overlay → save flow (milestones 1-10) is fully functional and polished.
+Built after the original 10 milestones above, well beyond that original scope. Backed by [Supabase](https://supabase.com) (Postgres + Auth + Storage) — this backend still only ever serves the read-only `/api/moment` lookup, nothing about accounts or Moment storage touches it. See `CLAUDE.md`'s "Frontend architecture" section for the technical detail.
 
-**Cryptographically verified Moments**: investigate [C2PA](https://c2pa.org/)/Content Credentials so a Moment can be cryptographically tied to having come from an authorized btcgram capture flow, and to prove its signed content hasn't been altered since capture. Longer term, the backend should reject Moments without valid capture provenance rather than accepting arbitrary uploaded images.
+- ✅ Email/password accounts, gating the whole app behind a Login screen
+- ✅ A Feed screen showing the logged-in user's own Moments (Postgres, Row Level Security-scoped per user)
+- ✅ Post button — uploads the composed photo to Supabase Storage and creates a Moment
+- ✅ Tapping a Moment opens a detail view: Save to camera roll, or Delete (removes both the file and the row)
+- ✅ Google sign-in on the Login screen (email/password and Google both work)
+
+v2 is done. `dev` is ready to merge into `main` as the new baseline.
+
+### Next big chapter: cryptographically verified Moments (C2PA)
+
+The app is functional now (v1 on `main`, v2 on `dev` nearly done — see above), and this is the actual next major initiative, not a small add-on. Deliberately **not rushing it**: this is a real learning process, worked through deliberately rather than sped through, unlike how quickly a lot of the app itself came together.
+
+Investigate [C2PA](https://c2pa.org/)/Content Credentials so a Moment can be cryptographically tied to having come from an authorized btcgram capture flow, and to prove its signed content hasn't been altered since capture. Longer term, the backend should reject Moments without valid capture provenance rather than accepting arbitrary uploaded images.
 
 Scope limit worth stating explicitly: C2PA/signatures prove **provenance and integrity** (this file came from a specific signer and is unmodified) — not that **the physical scene itself is genuine**. Someone could point the btcgram camera at a photo or a screen and still get a validly signed Moment of a fake scene. Don't oversell what this feature actually proves.
 

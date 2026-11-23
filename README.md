@@ -11,7 +11,7 @@ This is the **backend** for a larger project: the plan is to pair this API with 
 - ✅ Weather (temperature, condition) via [Open-Meteo](https://open-meteo.com/)
 - ✅ Timezone and local time via Open-Meteo
 - ✅ BTC price (USD) via [CoinGecko](https://www.coingecko.com/en/api), cached for 60s
-- ⬜ Deployment (on hold — evaluating free hosting options; local development only for now)
+- ✅ Deployed on [Render](https://render.com)'s free tier (see "How the app is hosted" below)
 
 ### Known issues / not yet handled
 - If a coordinate has no matching address (e.g. open ocean), `city`/`country` may come back as `"Unknown"` in some cases and raw `null` in others — needs consistent handling
@@ -62,6 +62,46 @@ Key management (rough shape, needs real investigation before building):
 - App updates, new iPhone generations, and device turnover shouldn't require preserving one key forever — the backend should track and manage a set of trusted, rotatable public keys/credentials.
 
 Explicitly separate concerns: C2PA already handles cryptographic hashing/signing internally, so this isn't "SHA-ing the signature" — a standalone SHA-256 hash of a Moment could later be useful as an identifier or for anchoring, but that's a distinct idea from the C2PA signature itself. Blockchain anchoring and NFTs are optional future experiments, not part of the core verification design.
+
+## How the app is hosted
+
+btcgram is three separate pieces, each running somewhere different:
+
+| Piece | Where it runs | What it does |
+|---|---|---|
+| Backend (this Spring Boot API) | [Render](https://render.com), free tier | Serves `/api/moment` (location, weather, local time, BTC price) |
+| Database, accounts, photos | [Supabase](https://supabase.com), free tier | The `moments` table, email/password + Google sign-in, and the posted photos (Storage bucket) |
+| Frontend (Expo app) | Your phone, via Expo Go or an Xcode build | Not deployed to the App Store; runs from the dev server on your laptop |
+
+### Backend on Render
+
+- Render builds the backend from this GitHub repo using `backend/btcgram/Dockerfile` (a two-stage build, so Render compiles the jar itself; no image is pushed to Docker Hub). In the Render service's **Settings** this should show the Docker runtime with root directory `backend/btcgram`.
+- **It falls asleep.** Free Render services spin down after about 15 minutes with no requests. The first request after that wakes it up, which can take up to a minute, so the first `/api/moment` call of a session is slow. That's expected, not broken.
+- Logs, deploy history (the **Events** tab shows which commit each deploy came from), and the public URL are all in the Render dashboard at [dashboard.render.com](https://dashboard.render.com).
+- Free-tier limits worth knowing: 750 instance hours a month, and outgoing requests come from IP addresses shared with other Render users. Nominatim and CoinGecko rate-limit by IP, so they can occasionally refuse requests because of someone else's traffic. This is why local Docker (below) is sometimes the easier dev setup.
+
+### Supabase
+
+- One project, named `btcgram`, holds the database, sign-in, and photo storage. The schema and Row Level Security policies are in `supabase/schema.sql`.
+- **Free projects get paused after about a week of no activity.** When that happens, sign-in, the Feed, and posting all stop working. Fix: open the project in the [Supabase dashboard](https://supabase.com/dashboard) and hit **Restore**, then wait a few minutes.
+- Google sign-in also depends on the Google provider settings in Supabase (Authentication → Providers), including "Skip nonce checks" being on. See `CLAUDE.md` for why.
+
+### Pointing the app at the backend
+
+The frontend reads its settings from `frontend/.env.local` (copy `frontend/.env.example` to start):
+
+- `EXPO_PUBLIC_API_BASE_URL`: the Render URL to use the hosted backend, or `http://<your-machine's-LAN-IP>:8080` to use a backend running in Docker on your laptop.
+- `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY`: from the Supabase project's API settings.
+- `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` / `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`: the Google sign-in client IDs.
+
+Restart `npx expo start` after changing `.env.local`.
+
+### Coming back after a break: checklist
+
+1. Restore the Supabase project if it's paused.
+2. Wake the Render backend by opening `<render-url>/api/moment?lat=40.7128&lon=-74.0060` in a browser (or start it locally with Docker instead).
+3. Check `frontend/.env.local` points at whichever backend you're using.
+4. `cd frontend && npx expo start`, then open the app on your phone.
 
 ## Tech stack
 
